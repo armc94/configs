@@ -21,6 +21,7 @@ import os
 import re
 import socket
 import subprocess
+import configparser
 from libqtile.extension import Dmenu, RunCommand
 from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.command import lazy
@@ -30,12 +31,17 @@ from libqtile.extension import Dmenu
 
 ##### DEFINING SOME WINDOW FUNCTIONS #####
 
+config_file_path = './config.conf'
+configuration = configparser.RawConfigParser()
+configuration.read(config_file_path)
+
 
 @lazy.function
 def window_to_prev_group(qtile):
     if qtile.currentWindow is not None:
         i = qtile.groups.index(qtile.currentGroup)
         qtile.currentWindow.togroup(qtile.groups[i - 1].name)
+
 
 @lazy.function
 def window_to_next_group(qtile):
@@ -54,12 +60,16 @@ def app_or_group(group, app):
             qtile.cmd_spawn(app)
     return f
 
-##### KEYBINDINGS #####
+# KEYBINDINGS\
+
+
+
 def init_keys():
     keys = [
         Key([mod], "Return",       lazy.spawn(myTerm)), # open terminal
+        Key([mod], "t",            lazy.spawn("notify-send asd")), # open terminal
         Key([mod], "Tab",          lazy.next_layout()), # next layouy
-        Key([mod], "q",   lazy.window.kill()), # kill window
+        Key([mod], "q",            lazy.window.kill()), # kill window
         Key([mod, "shift"], "r",   lazy.restart()),     # restart qtile
         Key([mod, "shift"], "q",   lazy.shutdown()),    # quit qtile
 
@@ -76,17 +86,11 @@ def init_keys():
                                          # Shrink size of window (XmonadTall)
                                    lazy.layout.decrease_nmaster()),
                                          # Decrease number in master pane (Tile)
-        Key([mod, "shift"], "Left",                 # Move window to workspace to the left
-            window_to_prev_group
-            ),
-        Key(
-            [mod, "shift"], "Right",                # Move window to workspace to the right
-            window_to_next_group
-            ),
-        Key([mod], "w",
+
+        Key([mod], "z",
             lazy.to_screen(0)                       # Keyboard focus to screen(0)
             ),
-        Key([mod], "e",
+        Key([mod], "x",
             lazy.to_screen(1)                       # Keyboard focus to screen(1)
             ),
         Key(
@@ -98,7 +102,7 @@ def init_keys():
             lazy.layout.maximize()                  # Toggle a window between minimum and maximum sizes
             ),
         Key(
-            [mod, "shift"], "f",
+            [mod], "f",
             lazy.window.toggle_floating()           # Toggle floating
             ),
         Key(
@@ -121,50 +125,16 @@ def init_keys():
             [mod, "shift"], "Return",
             lazy.spawn("dmenu_run -fn 'UbuntuMono Nerd Font:size=10' -nb {0} -nf '#ffffff' -sb {1} -sf '#ffffff' -p 'dmenu:'".format(colors[0][0], colors[5][0]))
             ),
-
-        ### Dmenu scripts launched with ALT + CTRL + KEY
-        Key(
-            ["mod1"], "c",
-            lazy.spawn(["sh", "/home/igg/.dmenu/config_one.sh"]),
-            ),
-        Key(
-            ["mod1"], "v",
-            lazy.spawn(["sh", "/home/igg/.dmenu/wall.sh"])
-            ),
-        Key(
-            ["mod1", "control"], "p",
-            lazy.spawn("passmenu")
-            ),
-        Key(
-            ["mod1", "control"], "r",
-            lazy.spawn("./.dmenu/dmenu-reddio.sh")
-            ),
-        Key(
-            ["mod1", "control"], "s",
-            lazy.spawn("./.dmenu/dmenu-surfraw.sh")
-            ),
-        Key(
-            ["mod1", "control"], "t",
-            lazy.spawn("./.dmenu/dmenu-trading.sh")
-            ),
-        Key(
-            ["mod1", "control"], "i",
-            lazy.spawn("./.dmenu/dmenu-scrot.sh")
-            ),
-
-        ### My applications launched with SUPER + ALT + KEY
-        Key(
-            [mod, "mod1"], "l",
-            lazy.spawn(myTerm+" -e lynx -cfg=~/.lynx/lynx.cfg -lss=~/.lynx/lynx.lss gopher://distro.tube")
-            ),
-        Key(
-            ["control", "mod1"], "b",
-            lazy.spawn("brave")
-            ),
-        Key(
-            [mod, "mod1"], "r",
-            lazy.spawn(myTerm+" -e rtv")
-            ),
+        Key([mod, "control"], "o", lazy.spawn("librewolf")),
+        Key([mod, "control"], "i", lazy.spawn("midori")),
+        Key([mod, "control"], "p", lazy.spawn("brave")),
+        Key([mod, "control"], "k", lazy.spawn("atom")),
+        Key([mod, "control"], "z", lazy.spawncmd()), # open terminal
+        Key([mod, "control"], "l", lazy.spawn("nautilus")),
+        Key([mod, "control"], "m",
+            lazy.spawn("mousepad /home/igg/git/wiki_me/wiki_me.md")),
+        Key([mod, "control"], "n",
+            lazy.spawn("mousepad /home/igg/git/wiki_me/to_do.md")),
         Key(
             [mod, "mod1"], "e",
             lazy.spawn(myTerm+" -e neomutt")
@@ -198,29 +168,32 @@ def init_keys():
             lazy.spawn(myTerm+" -e htop")
             ),
         Key(
-            [mod, "mod1"], "a",
-            lazy.spawn(myTerm+" -e ncpamixer")
+                [mod, "mod1"], "a",
+                lazy.spawn(myTerm+" -e ncpamixer")
             ),
         Key(
             [], "XF86AudioLowerVolume",
-            lazy.spawn("pamixer --allow-boost -d 3")
+            lazy.spawn("pamixer -d 3")
            ),
         Key(
             [], "XF86AudioRaiseVolume",
-            lazy.spawn("pamixer --allow-boost -i 3")
+            lazy.spawn("pamixer -i 3")
            ),
         Key(
             [], "XF86AudioMute",
             lazy.spawn("pamixer --toggle-mute"),
            ),
-
         Key(
-               [], "XF86MonBrightnessUp",
-                lazy.spawn("sudo xbacklight -inc 15")
+           [], "XF86AudioMicMute",
+           lazy.spawn("pactl set-source-mute @DEFAULT_SOURCE@ toggle"),
+          ),
+        Key(
+	   [], "XF86MonBrightnessUp",
+	   lazy.spawn("light -A 15")
            ),
         Key(
-                [], "XF86MonBrightnessDown",
-                lazy.spawn("sudo xbacklight -dec 15")
+           [], "XF86MonBrightnessDown",
+           lazy.spawn("light -U 15")
             )
     ]
     return keys
@@ -273,16 +246,17 @@ def init_border_args():
     return {"border_width": 2}
 
 def init_layouts():
-    return [#layout.MonadWide(**layout_theme),
-            #layout.Bsp(**layout_theme),
-            #layout.Stack(stacks=2, **layout_theme),
-            #layout.Columns(**layout_theme),
-            #layout.RatioTile(**layout_theme),
-            #layout.VerticalTile(**layout_theme),
+    return [
+            # layout.Bsp(**layout_theme),
+            # layout.Stack(stacks=2, **layout_theme),
+            # layout.Columns(**layout_theme),
+            # layout.VerticalTile(**layout_theme),
             # layout.Tile(shift_windows=True, **layout_theme),
             # layout.Zoomy(**layout_theme),
             layout.MonadTall(**layout_theme),
-            layout.Matrix(**layout_theme),
+            layout.RatioTile(**layout_theme),
+            # layout.Matrix(**layout_theme),
+            layout.MonadWide(**layout_theme),
             layout.Max(**layout_theme),
             # layout.TreeTab(
             #     font = "Ubuntu",
@@ -306,7 +280,7 @@ def init_layouts():
 
 def init_widgets_defaults():
     return dict(font="Ubuntu Mono",
-                fontsize = 16,
+                fontsize = 15,
                 padding = 2,
                 background=colors[0])
 
@@ -342,18 +316,18 @@ def init_widgets_list():
                         background = colors[0],
                         padding = 10
                         ),
-               # widget.Prompt(
-               #          prompt=prompt,
-               #          font="Ubuntu Mono",
-               #          padding=10,
-               #          foreground = colors[3],
-               #          background = colors[1]
-               #          ),
+               widget.Prompt(
+                        prompt=prompt,
+                        font="Ubuntu Mono",
+                        padding=10,
+                        foreground = colors[3],
+                        background = colors[1]
+                        ),
                widget.WindowName(font="Ubuntu",
                         fontsize = 17,
                         foreground = colors[5],
                         background = colors[0],
-                        padding = 5
+                        padding = 3
                         ),
                widget.Battery(
                         foreground=colors[2],
@@ -362,8 +336,8 @@ def init_widgets_list():
                         padding = 0,
                         # fontsize=15,
                         discharge_char = "" ,
-                        charge_char = "^" ,
-                        format= " [ Bat: {percent: 1.0%}{char} ] ",
+                        charge_char="^",
+                        format= " [ Bat:{percent: 1.0%}{char} ] ",
                         update_interval = 5
                         ),
                widget.Clock(
@@ -373,10 +347,10 @@ def init_widgets_list():
                         # fontsize = 15,
                         ),
 
-               # widget.Systray(
-               #          background=colors[0],
-               #          padding = 5
-               #          ),
+                widget.Systray(
+                         background=colors[0],
+                         padding = 5
+                         ),
               ]
     return widgets_list
 
@@ -391,9 +365,9 @@ def init_widgets_screen2():
     return widgets_screen2                       # Monitor 2 will display all widgets in widgets_list
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=20)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=0.95, size=20)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=20))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=24)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=0.95, size=24)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=24))]
 
 ##### FLOATING WINDOWS #####
 
@@ -412,6 +386,8 @@ def init_mouse():
             Click([mod, "shift"], "Button1", lazy.window.bring_to_front())]  # Bring floating window to front
 
 ##### DEFINING A FEW THINGS #####
+
+
 
 if __name__ in ["config", "__main__"]:
     mod = "mod4"                                     # Sets mod key to SUPER/WINDOWS
@@ -445,6 +421,11 @@ for i, (name, kwargs) in enumerate(group_names, 1):
 def start_once():
     home = os.path.expanduser('~')
     # subprocess.call([home + '/.config/qtile/autostart.sh'])
+
+# @hook.subscribe.client_new
+# def inkscape_dialogues(window):
+#    if(window.window.get_name() == 'wiki_me.md'):
+#         window.floating = True
 
 ##### NEEDED FOR SOME JAVA APPS #####
 
