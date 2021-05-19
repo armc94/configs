@@ -1,0 +1,13 @@
+#!/bin/sh
+
+dunstctl close-all
+pamixer -i 3;
+vol=$(pamixer --get-volume)
+mute=$(pamixer --get-mute)
+
+if [[ "$mute" == "true" ]]; then
+	s=' (muted)'
+else
+	s=$''
+fi
+notify-send "Volume $vol$s"

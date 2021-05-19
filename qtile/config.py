@@ -29,7 +29,8 @@ from libqtile import layout, bar, widget, hook
 from libqtile.widget import Spacer
 from libqtile.extension import Dmenu
 
-##### DEFINING SOME WINDOW FUNCTIONS #####
+#### DEFINING SOME WINDOW FUNCTIONS #####
+
 
 config_file_path = './config.conf'
 configuration = configparser.RawConfigParser()
@@ -61,8 +62,6 @@ def app_or_group(group, app):
     return f
 
 # KEYBINDINGS\
-
-
 
 def init_keys():
     keys = [
@@ -123,18 +122,19 @@ def init_keys():
         ### Dmenu Run Launcher
         Key(
             [mod, "shift"], "Return",
-            lazy.spawn("dmenu_run -fn 'UbuntuMono Nerd Font:size=10' -nb {0} -nf '#ffffff' -sb {1} -sf '#ffffff' -p 'dmenu:'".format(colors[0][0], colors[5][0]))
+            lazy.spawn("dmenu_run -fn 'Ubuntu Mono Nerd Font:size=10' -nb {0} -nf '#ffffff' -sb {1} -sf '#ffffff' -p 'dmenu:'".format(colors[0][0], colors[5][0]))
             ),
-        Key([mod, "control"], "o", lazy.spawn("librewolf")),
-        Key([mod, "control"], "i", lazy.spawn("midori")),
-        Key([mod, "control"], "p", lazy.spawn("brave")),
+        # Key([mod, "control"], "o", lazy.spawn("librewolf")),
+        # Key([mod, "control"], "i", lazy.spawn("midori")),
+        Key([mod, "control"], "p", lazy.spawn("firefox")),
         Key([mod, "control"], "k", lazy.spawn("atom")),
+        Key([mod, "control"], "b", lazy.spawn("alacritty -e pulsemixer")),
         Key([mod, "control"], "z", lazy.spawncmd()), # open terminal
         Key([mod, "control"], "l", lazy.spawn("nautilus")),
         Key([mod, "control"], "m",
-            lazy.spawn("mousepad /home/igg/git/wiki_me/wiki_me.md")),
+            lazy.spawn("kwrite /home/igg/git/wiki_me/wiki_me.md")),
         Key([mod, "control"], "n",
-            lazy.spawn("mousepad /home/igg/git/wiki_me/to_do.md")),
+            lazy.spawn("kwrite /home/igg/git/wiki_me/to_do.md")),
         Key(
             [mod, "mod1"], "e",
             lazy.spawn(myTerm+" -e neomutt")
@@ -173,15 +173,15 @@ def init_keys():
             ),
         Key(
             [], "XF86AudioLowerVolume",
-            lazy.spawn("pamixer -d 3")
+            lazy.spawn(" /home/igg/git/configs/custom_scripts/vol_down")
            ),
         Key(
             [], "XF86AudioRaiseVolume",
-            lazy.spawn("pamixer -i 3")
+            lazy.spawn("/home/igg/git/configs/custom_scripts/vol_up")
            ),
         Key(
             [], "XF86AudioMute",
-            lazy.spawn("pamixer --toggle-mute"),
+            lazy.spawn("/home/igg/git/configs/custom_scripts/vol_mute"),
            ),
         Key(
            [], "XF86AudioMicMute",
@@ -233,7 +233,7 @@ def init_groups():
 ##### LAYOUTS #####
 
 def init_floating_layout():
-    return layout.Floating(border_focus="#3B4022")
+    return layout.Floating(border_focus="#9AEDFE")
 
 def init_layout_theme():
     return {"border_width": 3,
@@ -293,7 +293,7 @@ def init_widgets_list():
                         foreground = colors[2][0],
                         background = colors[0][0]
                         ),
-               widget.GroupBox(font="Ubuntu Bold",
+               widget.GroupBox(font="Ubuntu Mono Bold",
                         fontsize = 10,
                         margin_y = 2,
                         margin_x = 0,
@@ -309,7 +309,9 @@ def init_widgets_list():
                         other_current_screen_border = colors[0],
                         other_screen_border = colors[0],
                         foreground = colors[2],
-                        background = colors[0]
+                        background = colors[0],
+                        disable_drag = True,
+                        hide_unused = False,
                         ),
                 widget.CurrentLayoutIcon(
                         foreground = colors[2],
@@ -323,7 +325,7 @@ def init_widgets_list():
                         foreground = colors[3],
                         background = colors[1]
                         ),
-               widget.WindowName(font="Ubuntu",
+               widget.WindowName(font="Ubuntu Mono",
                         fontsize = 17,
                         foreground = colors[5],
                         background = colors[0],
@@ -338,6 +340,9 @@ def init_widgets_list():
                         discharge_char = "" ,
                         charge_char="^",
                         format= " [ Bat:{percent: 1.0%}{char} ] ",
+                        show_short_text = False,
+                        notify_below = 20,
+                        unknown_char = '',
                         update_interval = 5
                         ),
                widget.Clock(
@@ -365,9 +370,9 @@ def init_widgets_screen2():
     return widgets_screen2                       # Monitor 2 will display all widgets in widgets_list
 
 def init_screens():
-    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=24)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=0.95, size=24)),
-            Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=24))]
+    return [Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=20)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen2(), opacity=0.95, size=20)),
+            Screen(top=bar.Bar(widgets=init_widgets_screen1(), opacity=0.95, size=20))]
 
 ##### FLOATING WINDOWS #####
 
@@ -376,6 +381,12 @@ def floating(window):
     floating_types = ['notification', 'toolbar', 'splash', 'dialog']
     transient = window.window.get_wm_transient_for()
     if window.window.get_wm_type() in floating_types or transient:
+        window.floating = True
+
+@hook.subscribe.client_new
+def inkscape_dialogues(window):
+   floating_programs = ['to_do.md', "wiki_me.md ", 'pulsemixer', "wiki_me.md  \342\200\224 KWrite"]
+   if(window.window.get_name() in floating_programs) or "wiki_me" in window.window.get_name() or "to_do.md" in  window.window.get_name():
         window.floating = True
 
 def init_mouse():
@@ -422,10 +433,7 @@ def start_once():
     home = os.path.expanduser('~')
     # subprocess.call([home + '/.config/qtile/autostart.sh'])
 
-# @hook.subscribe.client_new
-# def inkscape_dialogues(window):
-#    if(window.window.get_name() == 'wiki_me.md'):
-#         window.floating = True
+
 
 ##### NEEDED FOR SOME JAVA APPS #####
 
